@@ -23,7 +23,7 @@
     <!-- BAGIAN ATAS: Saldo & Riwayat (Scrollable) -->
     <div class="flex-1 flex flex-col overflow-hidden bg-slate-50 relative">
         <!-- Header Saldo -->
-        <div class="bg-slate-800 text-white p-4 pt-6 pb-6 rounded-b-3xl shadow-md z-10 shrink-0">
+        <div class="bg-blue-800 text-white p-4 pt-6 pb-6 rounded-b-3xl shadow-md z-10 shrink-0">
             <div class="flex justify-between items-center mb-1">
                 <span class="text-xs uppercase tracking-wider opacity-70">Saldo Kamu</span>
                 <button onclick="downloadCSV()" class="bg-white/10 hover:bg-white/20 text-white px-2 py-1 rounded text-[10px] flex items-center gap-1 transition">
@@ -75,9 +75,9 @@
 
         <!-- Keypad Grid -->
         <div class="grid grid-cols-4 gap-1 p-2 bg-gray-50">
-            <button onclick="appendNumber('7')" class="btn-calc bg-white h-12 rounded-lg text-lg font-semibold text-gray-700 shadow-sm">7</button>
-            <button onclick="appendNumber('8')" class="btn-calc bg-white h-12 rounded-lg text-lg font-semibold text-gray-700 shadow-sm">8</button>
-            <button onclick="appendNumber('9')" class="btn-calc bg-white h-12 rounded-lg text-lg font-semibold text-gray-700 shadow-sm">9</button>
+            <button onclick="appendNumber('1')" class="btn-calc bg-white h-12 rounded-lg text-lg font-semibold text-gray-700 shadow-sm">7</button>
+            <button onclick="appendNumber('2')" class="btn-calc bg-white h-12 rounded-lg text-lg font-semibold text-gray-700 shadow-sm">8</button>
+            <button onclick="appendNumber('3')" class="btn-calc bg-white h-12 rounded-lg text-lg font-semibold text-gray-700 shadow-sm">9</button>
             <button onclick="deleteDigit()" class="btn-calc bg-red-50 h-12 rounded-lg text-lg text-red-500 shadow-sm"><i class="fa-solid fa-delete-left"></i></button>
 
             <button onclick="appendNumber('4')" class="btn-calc bg-white h-12 rounded-lg text-lg font-semibold text-gray-700 shadow-sm">4</button>
@@ -85,9 +85,9 @@
             <button onclick="appendNumber('6')" class="btn-calc bg-white h-12 rounded-lg text-lg font-semibold text-gray-700 shadow-sm">6</button>
             <button onclick="clearDisplay()" class="btn-calc bg-gray-200 h-12 rounded-lg text-lg font-semibold text-gray-600 shadow-sm">C</button>
 
-            <button onclick="appendNumber('1')" class="btn-calc bg-white h-12 rounded-lg text-lg font-semibold text-gray-700 shadow-sm">1</button>
-            <button onclick="appendNumber('2')" class="btn-calc bg-white h-12 rounded-lg text-lg font-semibold text-gray-700 shadow-sm">2</button>
-            <button onclick="appendNumber('3')" class="btn-calc bg-white h-12 rounded-lg text-lg font-semibold text-gray-700 shadow-sm">3</button>
+            <button onclick="appendNumber('7')" class="btn-calc bg-white h-12 rounded-lg text-lg font-semibold text-gray-700 shadow-sm">1</button>
+            <button onclick="appendNumber('8')" class="btn-calc bg-white h-12 rounded-lg text-lg font-semibold text-gray-700 shadow-sm">2</button>
+            <button onclick="appendNumber('9')" class="btn-calc bg-white h-12 rounded-lg text-lg font-semibold text-gray-700 shadow-sm">3</button>
             <button onclick="saveTransaction()" class="btn-calc bg-blue-600 h-24 rounded-lg text-xl text-white shadow-sm row-span-2 flex items-center justify-center active:bg-blue-700"><i class="fa-solid fa-check"></i></button>
 
             <button onclick="appendNumber('0')" class="btn-calc bg-white h-12 rounded-lg text-lg font-semibold text-gray-700 shadow-sm">0</button>
@@ -105,8 +105,8 @@
         let selectedCategory = '';
 
         const categories = {
-            expense: ['Makan', 'Minum', 'Bensin', 'Jajan', 'Lainnya'],
-            income: ['Gaji', 'Bonus', 'Ortu', 'Lainnya']
+            expense: ['Makan', 'Minum', 'Kebersihan', 'ATK', 'Lainnya'],
+            income: ['Beasiswa', 'Ortu', 'Utang', 'Lainnya']
         };
 
         window.onload = () => {
@@ -288,3 +288,4 @@
     </script>
 </body>
 </html>
+
