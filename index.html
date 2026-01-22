@@ -2,154 +2,129 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kalkulator Keuangan Pribadi</title>
-    <!-- Tailwind CSS untuk tampilan modern -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Keuangan Kilat</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome untuk ikon -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .btn-calc {
-            transition: all 0.1s;
-        }
-        .btn-calc:active {
-            transform: scale(0.95);
-        }
-        /* Hide scrollbar for clean look */
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
+        body { font-family: 'Inter', sans-serif; touch-action: manipulation; } /* touch-action prevents double tap zoom */
+        
+        .btn-calc:active { transform: scale(0.95); background-color: #f3f4f6; }
+        
+        /* Hilangkan scrollbar tapi tetap bisa scroll */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+<body class="bg-gray-100 h-[100dvh] flex flex-col overflow-hidden"> 
+<!-- h-[100dvh] ensures it fits dynamic mobile viewports properly -->
 
-    <!-- Container Utama (Bentuk seperti HP/Kalkulator) -->
-    <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[90vh]">
-        
-        <!-- Header & Saldo -->
-        <div class="bg-slate-800 text-white p-6 pb-8 rounded-b-3xl z-10 shadow-md">
-            <h1 class="text-center text-sm uppercase tracking-wider opacity-70 mb-2">Keuangan Pribadiku</h1>
-            <div class="flex justify-between items-end">
-                <div>
-                    <p class="text-xs opacity-60">Saldo Saat Ini</p>
-                    <p class="text-2xl font-bold" id="totalBalance">Rp 0</p>
-                </div>
-                <button onclick="downloadCSV()" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-lg text-xs flex items-center gap-2 transition">
-                    <i class="fa-solid fa-file-excel"></i> Rekap
+    <!-- BAGIAN ATAS: Saldo & Riwayat (Scrollable) -->
+    <div class="flex-1 flex flex-col overflow-hidden bg-slate-50 relative">
+        <!-- Header Saldo -->
+        <div class="bg-slate-800 text-white p-4 pt-6 pb-6 rounded-b-3xl shadow-md z-10 shrink-0">
+            <div class="flex justify-between items-center mb-1">
+                <span class="text-xs uppercase tracking-wider opacity-70">Saldo Kamu</span>
+                <button onclick="downloadCSV()" class="bg-white/10 hover:bg-white/20 text-white px-2 py-1 rounded text-[10px] flex items-center gap-1 transition">
+                    <i class="fa-solid fa-file-arrow-down"></i> Simpan Excel
                 </button>
+            </div>
+            <p class="text-3xl font-bold tracking-tight" id="totalBalance">Rp 0</p>
+        </div>
+
+        <!-- List Riwayat (Ini yang bisa discroll) -->
+        <div class="flex-1 overflow-y-auto p-4 space-y-2 pb-4" id="historyList">
+            <!-- Data akan masuk sini -->
+        </div>
+        
+        <!-- Fade effect di bawah list biar kelihatan smooth -->
+        <div class="absolute bottom-0 left-0 w-full h-6 bg-gradient-to-t from-gray-200 to-transparent pointer-events-none"></div>
+    </div>
+
+    <!-- BAGIAN BAWAH: Input & Keypad (FIXED) -->
+    <div class="bg-white rounded-t-3xl shadow-[0_-5px_20px_rgba(0,0,0,0.1)] z-20 shrink-0 flex flex-col">
+        
+        <!-- Toggle & Display -->
+        <div class="p-4 pb-0">
+            <!-- Switcher Pengeluaran/Pemasukan -->
+            <div class="flex bg-gray-100 rounded-lg p-1 mb-2">
+                <button id="btnExpense" onclick="setType('expense')" class="flex-1 py-2 text-xs font-bold rounded bg-white text-red-500 shadow-sm transition">
+                    PENGELUARAN
+                </button>
+                <button id="btnIncome" onclick="setType('income')" class="flex-1 py-2 text-xs font-bold rounded text-gray-400 transition">
+                    PEMASUKAN
+                </button>
+            </div>
+
+            <!-- Layar Angka -->
+            <div class="flex justify-between items-end border-b-2 border-gray-100 pb-2 mb-2">
+                <span class="text-xs text-gray-400 mb-1">Nominal</span>
+                <div class="text-3xl font-bold text-gray-800 tracking-tight truncate" id="displayScreen">0</div>
+            </div>
+
+            <!-- Kategori Chips (Scroll Horizontal) -->
+            <div class="relative">
+                <div id="categoryList" class="flex gap-2 overflow-x-auto pb-2 no-scrollbar scroll-smooth">
+                    <!-- Tombol kategori via JS -->
+                </div>
+                <!-- Input Manual -->
+                <input type="text" id="customCategoryInput" placeholder="Ketik..." class="w-full p-2 mb-2 text-sm rounded-lg border border-gray-300 hidden focus:outline-none focus:border-blue-500">
             </div>
         </div>
 
-        <!-- Area Input Transaksi -->
-        <div class="flex-1 overflow-y-auto no-scrollbar bg-gray-50 p-4 pb-20">
-            
-            <!-- Layar Kalkulator -->
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-4 text-right">
-                <p class="text-xs text-gray-400 mb-1">Nominal Input</p>
-                <div class="text-3xl font-bold text-gray-800 break-words" id="displayScreen">0</div>
-            </div>
+        <!-- Keypad Grid -->
+        <div class="grid grid-cols-4 gap-1 p-2 bg-gray-50">
+            <button onclick="appendNumber('7')" class="btn-calc bg-white h-12 rounded-lg text-lg font-semibold text-gray-700 shadow-sm">7</button>
+            <button onclick="appendNumber('8')" class="btn-calc bg-white h-12 rounded-lg text-lg font-semibold text-gray-700 shadow-sm">8</button>
+            <button onclick="appendNumber('9')" class="btn-calc bg-white h-12 rounded-lg text-lg font-semibold text-gray-700 shadow-sm">9</button>
+            <button onclick="deleteDigit()" class="btn-calc bg-red-50 h-12 rounded-lg text-lg text-red-500 shadow-sm"><i class="fa-solid fa-delete-left"></i></button>
 
-            <!-- Jenis Transaksi (Toggle) -->
-            <div class="flex bg-gray-200 rounded-lg p-1 mb-4">
-                <button id="btnExpense" onclick="setType('expense')" class="flex-1 py-2 rounded-md text-sm font-semibold bg-white text-red-500 shadow-sm transition">
-                    Pengeluaran
-                </button>
-                <button id="btnIncome" onclick="setType('income')" class="flex-1 py-2 rounded-md text-sm font-semibold text-gray-500 transition">
-                    Pemasukan
-                </button>
-            </div>
+            <button onclick="appendNumber('4')" class="btn-calc bg-white h-12 rounded-lg text-lg font-semibold text-gray-700 shadow-sm">4</button>
+            <button onclick="appendNumber('5')" class="btn-calc bg-white h-12 rounded-lg text-lg font-semibold text-gray-700 shadow-sm">5</button>
+            <button onclick="appendNumber('6')" class="btn-calc bg-white h-12 rounded-lg text-lg font-semibold text-gray-700 shadow-sm">6</button>
+            <button onclick="clearDisplay()" class="btn-calc bg-gray-200 h-12 rounded-lg text-lg font-semibold text-gray-600 shadow-sm">C</button>
 
-            <!-- Kategori -->
-            <div class="mb-4">
-                <p class="text-xs text-gray-400 mb-2 ml-1">Pilih Kategori</p>
-                <!-- Container Tombol Menyamping -->
-                <div id="categoryList" class="flex gap-2 overflow-x-auto pb-2 mb-2 no-scrollbar px-1">
-                    <!-- Tombol kategori akan diisi via JS -->
-                </div>
-                <!-- Input Manual (Hidden by default) -->
-                <input type="text" id="customCategoryInput" placeholder="Ketik kategori lainnya..." class="w-full p-3 rounded-xl border border-gray-300 hidden focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
-            </div>
+            <button onclick="appendNumber('1')" class="btn-calc bg-white h-12 rounded-lg text-lg font-semibold text-gray-700 shadow-sm">1</button>
+            <button onclick="appendNumber('2')" class="btn-calc bg-white h-12 rounded-lg text-lg font-semibold text-gray-700 shadow-sm">2</button>
+            <button onclick="appendNumber('3')" class="btn-calc bg-white h-12 rounded-lg text-lg font-semibold text-gray-700 shadow-sm">3</button>
+            <button onclick="saveTransaction()" class="btn-calc bg-blue-600 h-24 rounded-lg text-xl text-white shadow-sm row-span-2 flex items-center justify-center active:bg-blue-700"><i class="fa-solid fa-check"></i></button>
 
-            <!-- Keypad Kalkulator -->
-            <div class="grid grid-cols-4 gap-3 mb-6">
-                <button onclick="appendNumber('7')" class="btn-calc bg-white p-4 rounded-2xl shadow-sm text-xl font-semibold text-gray-700">7</button>
-                <button onclick="appendNumber('8')" class="btn-calc bg-white p-4 rounded-2xl shadow-sm text-xl font-semibold text-gray-700">8</button>
-                <button onclick="appendNumber('9')" class="btn-calc bg-white p-4 rounded-2xl shadow-sm text-xl font-semibold text-gray-700">9</button>
-                <button onclick="deleteDigit()" class="btn-calc bg-red-100 p-4 rounded-2xl shadow-sm text-xl font-semibold text-red-500"><i class="fa-solid fa-delete-left"></i></button>
-
-                <button onclick="appendNumber('4')" class="btn-calc bg-white p-4 rounded-2xl shadow-sm text-xl font-semibold text-gray-700">4</button>
-                <button onclick="appendNumber('5')" class="btn-calc bg-white p-4 rounded-2xl shadow-sm text-xl font-semibold text-gray-700">5</button>
-                <button onclick="appendNumber('6')" class="btn-calc bg-white p-4 rounded-2xl shadow-sm text-xl font-semibold text-gray-700">6</button>
-                <button onclick="clearDisplay()" class="btn-calc bg-gray-200 p-4 rounded-2xl shadow-sm text-xl font-semibold text-gray-600">C</button>
-
-                <button onclick="appendNumber('1')" class="btn-calc bg-white p-4 rounded-2xl shadow-sm text-xl font-semibold text-gray-700">1</button>
-                <button onclick="appendNumber('2')" class="btn-calc bg-white p-4 rounded-2xl shadow-sm text-xl font-semibold text-gray-700">2</button>
-                <button onclick="appendNumber('3')" class="btn-calc bg-white p-4 rounded-2xl shadow-sm text-xl font-semibold text-gray-700">3</button>
-                <button onclick="saveTransaction()" class="btn-calc bg-blue-600 p-4 rounded-2xl shadow-sm text-xl font-semibold text-white row-span-2 flex items-center justify-center"><i class="fa-solid fa-check"></i></button>
-
-                <button onclick="appendNumber('0')" class="btn-calc bg-white p-4 rounded-2xl shadow-sm text-xl font-semibold text-gray-700">0</button>
-                <button onclick="appendNumber('00')" class="btn-calc bg-white p-4 rounded-2xl shadow-sm text-xl font-semibold text-gray-700 font-mono text-sm flex items-center justify-center">00</button>
-                <button onclick="appendNumber('000')" class="btn-calc bg-orange-100 border border-orange-200 p-4 rounded-2xl shadow-sm text-sm font-bold text-orange-600 font-mono flex items-center justify-center">000</button>
-            </div>
-
-            <!-- Riwayat Transaksi -->
-            <div class="mt-6">
-                <h3 class="font-bold text-gray-700 mb-3 flex justify-between items-center">
-                    Riwayat Terakhir
-                    <button onclick="clearAllData()" class="text-xs text-red-400 hover:text-red-600">Hapus Semua</button>
-                </h3>
-                <div id="historyList" class="space-y-3">
-                    <!-- Item riwayat akan muncul di sini -->
-                    <div class="text-center text-gray-400 py-4 text-sm">Belum ada data</div>
-                </div>
-            </div>
+            <button onclick="appendNumber('0')" class="btn-calc bg-white h-12 rounded-lg text-lg font-semibold text-gray-700 shadow-sm">0</button>
+            <button onclick="appendNumber('00')" class="btn-calc bg-white h-12 rounded-lg text-sm font-semibold text-gray-700 shadow-sm">00</button>
+            <button onclick="appendNumber('000')" class="btn-calc bg-orange-50 border border-orange-100 h-12 rounded-lg text-sm font-bold text-orange-600 shadow-sm">000</button>
         </div>
     </div>
 
     <script>
-        // State Aplikasi
+        // --- LOGIC SAMA, TAPI UI LEBIH RESPONSIF ---
+        
         let currentInput = '0';
-        let transactionType = 'expense'; // 'expense' or 'income'
+        let transactionType = 'expense'; 
         let transactions = JSON.parse(localStorage.getItem('financeData')) || [];
-        let selectedCategory = ''; // Menyimpan kategori yang dipilih
+        let selectedCategory = '';
 
-        // Opsi Kategori
         const categories = {
-            expense: ['Makan', 'Minum', 'Kebersihan', 'ATK', 'Lainnya'],
-            income: ['Beasiswa', 'Utang Teman', 'Ortu', 'Lainnya']
+            expense: ['Makan', 'Minum', 'Bensin', 'Jajan', 'Lainnya'],
+            income: ['Gaji', 'Bonus', 'Ortu', 'Lainnya']
         };
 
-        // --- Inisialisasi ---
         window.onload = () => {
-            // Set default kategori awal
             selectedCategory = categories[transactionType][0];
             updateCategoryOptions();
             renderHistory();
             updateTotalBalance();
         };
 
-        // --- Logika Kalkulator ---
         function appendNumber(num) {
-            if (currentInput === '0') {
-                currentInput = num;
-            } else {
-                currentInput += num;
-            }
+            if (currentInput.length > 12) return; // Limit digit biar ga luber
+            if (currentInput === '0') currentInput = num;
+            else currentInput += num;
             updateDisplay();
         }
 
         function deleteDigit() {
-            if (currentInput.length > 1) {
-                currentInput = currentInput.slice(0, -1);
-            } else {
-                currentInput = '0';
-            }
+            currentInput = currentInput.length > 1 ? currentInput.slice(0, -1) : '0';
             updateDisplay();
         }
 
@@ -159,28 +134,22 @@
         }
 
         function updateDisplay() {
-            // Format angka dengan pemisah ribuan
             const formatted = parseInt(currentInput).toLocaleString('id-ID');
             document.getElementById('displayScreen').innerText = formatted;
         }
 
-        // --- Logika Transaksi ---
         function setType(type) {
             transactionType = type;
-            
-            // Update UI Button
             const btnExpense = document.getElementById('btnExpense');
             const btnIncome = document.getElementById('btnIncome');
             
             if (type === 'expense') {
-                btnExpense.className = "flex-1 py-2 rounded-md text-sm font-semibold bg-white text-red-500 shadow-sm transition";
-                btnIncome.className = "flex-1 py-2 rounded-md text-sm font-semibold text-gray-500 transition";
+                btnExpense.className = "flex-1 py-2 text-xs font-bold rounded bg-white text-red-500 shadow-sm transition";
+                btnIncome.className = "flex-1 py-2 text-xs font-bold rounded text-gray-400 transition";
             } else {
-                btnExpense.className = "flex-1 py-2 rounded-md text-sm font-semibold text-gray-500 transition";
-                btnIncome.className = "flex-1 py-2 rounded-md text-sm font-semibold bg-white text-green-500 shadow-sm transition";
+                btnExpense.className = "flex-1 py-2 text-xs font-bold rounded text-gray-400 transition";
+                btnIncome.className = "flex-1 py-2 text-xs font-bold rounded bg-white text-green-500 shadow-sm transition";
             }
-
-            // Reset pilihan ke item pertama saat ganti tipe
             selectedCategory = categories[type][0];
             updateCategoryOptions();
         }
@@ -192,42 +161,32 @@
             categories[transactionType].forEach(cat => {
                 const btn = document.createElement('button');
                 btn.innerText = cat;
+                let className = "px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition border ";
                 
-                // Styling tombol (Chip style)
-                let className = "px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition border ";
-                
-                // Cek apakah ini kategori yang sedang dipilih
                 if (cat === selectedCategory) {
                     const activeColor = transactionType === 'expense' ? 'bg-red-500 border-red-500 text-white' : 'bg-green-500 border-green-500 text-white';
-                    className += `${activeColor} shadow-md transform scale-105`;
+                    className += `${activeColor} shadow-md`;
                 } else {
-                    className += "bg-white text-gray-500 border-gray-200 hover:bg-gray-50";
+                    className += "bg-white text-gray-500 border-gray-200";
                 }
                 
                 btn.className = className;
                 btn.onclick = () => selectCategory(cat);
-                
                 container.appendChild(btn);
             });
-
             checkCustomCategory();
         }
 
         function selectCategory(cat) {
             selectedCategory = cat;
-            updateCategoryOptions(); // Render ulang untuk update tampilan tombol aktif
+            updateCategoryOptions();
         }
 
         function checkCustomCategory() {
             const customInput = document.getElementById('customCategoryInput');
-            
-            // Cek variabel state, bukan elemen select lagi
             if (selectedCategory === 'Lainnya') {
                 customInput.classList.remove('hidden');
-                // Auto focus ke input jika baru diklik
-                if (document.activeElement !== customInput) {
-                     setTimeout(() => customInput.focus(), 50);
-                }
+                customInput.focus();
             } else {
                 customInput.classList.add('hidden');
             }
@@ -238,12 +197,10 @@
             if (amount === 0) return;
 
             let category = selectedCategory;
-
-            // Ambil nilai custom jika kategori 'Lainnya'
             if (category === 'Lainnya') {
                 const customVal = document.getElementById('customCategoryInput').value.trim();
-                category = customVal || 'Lainnya'; // Fallback jika kosong
-                document.getElementById('customCategoryInput').value = ''; // Reset input
+                category = customVal || 'Lainnya';
+                document.getElementById('customCategoryInput').value = '';
             }
 
             const newTransaction = {
@@ -254,31 +211,56 @@
                 amount: amount
             };
 
-            transactions.unshift(newTransaction); // Tambah ke paling atas
+            transactions.unshift(newTransaction);
             saveData();
-            
-            // Reset Kalkulator
             clearDisplay();
             renderHistory();
             updateTotalBalance();
+            
+            // Auto scroll history to top
+            document.getElementById('historyList').scrollTop = 0;
         }
 
-        // --- Logika Penyimpanan & Tampilan ---
-        function saveData() {
-            localStorage.setItem('financeData', JSON.stringify(transactions));
-        }
+        function saveData() { localStorage.setItem('financeData', JSON.stringify(transactions)); }
 
-        function clearAllData() {
-            if(confirm("Yakin ingin menghapus semua data?")) {
-                transactions = [];
-                saveData();
-                renderHistory();
-                updateTotalBalance();
+        function renderHistory() {
+            const list = document.getElementById('historyList');
+            list.innerHTML = '';
+
+            if (transactions.length === 0) {
+                list.innerHTML = '<div class="text-center text-gray-400 py-10 text-xs">Belum ada transaksi</div>';
+                return;
             }
+
+            transactions.forEach(t => {
+                const isExpense = t.type === 'expense';
+                const colorClass = isExpense ? 'text-red-500' : 'text-green-500';
+                const dateObj = new Date(t.date);
+                const dateString = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+                
+                const item = document.createElement('div');
+                item.className = 'bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center text-sm';
+                item.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full ${isExpense ? 'bg-red-50 text-red-500' : 'bg-green-50 text-green-500'} flex items-center justify-center text-xs">
+                            <i class="fa-solid ${isExpense ? 'fa-minus' : 'fa-plus'}"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-gray-700 leading-none mb-1">${t.category}</p>
+                            <p class="text-[10px] text-gray-400 leading-none">${dateString}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold ${colorClass}">Rp ${t.amount.toLocaleString('id-ID')}</span>
+                        <button onclick="removeTransaction(${t.id})" class="text-gray-300 hover:text-red-500 px-2"><i class="fa-solid fa-times"></i></button>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
         }
 
         function removeTransaction(id) {
-            if(confirm("Hapus transaksi ini?")) {
+            if(confirm("Hapus?")) {
                 transactions = transactions.filter(t => t.id !== id);
                 saveData();
                 renderHistory();
@@ -286,78 +268,22 @@
             }
         }
 
-        function renderHistory() {
-            const list = document.getElementById('historyList');
-            list.innerHTML = '';
-
-            if (transactions.length === 0) {
-                list.innerHTML = '<div class="text-center text-gray-400 py-4 text-sm">Belum ada data</div>';
-                return;
-            }
-
-            transactions.forEach(t => {
-                const isExpense = t.type === 'expense';
-                const colorClass = isExpense ? 'text-red-500' : 'text-green-500';
-                const sign = isExpense ? '-' : '+';
-                const icon = isExpense ? 'fa-arrow-down' : 'fa-arrow-up';
-                const dateObj = new Date(t.date);
-                const dateString = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute:'2-digit' });
-
-                const item = document.createElement('div');
-                item.className = 'bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center';
-                item.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full ${isExpense ? 'bg-red-50' : 'bg-green-50'} flex items-center justify-center ${colorClass}">
-                            <i class="fa-solid ${icon}"></i>
-                        </div>
-                        <div>
-                            <p class="font-bold text-gray-700 capitalize">${t.category}</p>
-                            <p class="text-xs text-gray-400">${dateString}</p>
-                        </div>
-                    </div>
-                    <div class="text-right">
-                        <p class="font-bold ${colorClass}">${sign} Rp ${t.amount.toLocaleString('id-ID')}</p>
-                        <button onclick="removeTransaction(${t.id})" class="text-xs text-gray-300 hover:text-red-500 mt-1"><i class="fa-solid fa-trash"></i></button>
-                    </div>
-                `;
-                list.appendChild(item);
-            });
-        }
-
         function updateTotalBalance() {
-            const total = transactions.reduce((acc, curr) => {
-                return curr.type === 'income' ? acc + curr.amount : acc - curr.amount;
-            }, 0);
-            
+            const total = transactions.reduce((acc, curr) => curr.type === 'income' ? acc + curr.amount : acc - curr.amount, 0);
             document.getElementById('totalBalance').innerText = `Rp ${total.toLocaleString('id-ID')}`;
         }
 
-        // --- Fitur Export CSV ---
         function downloadCSV() {
-            if (transactions.length === 0) {
-                alert("Belum ada data untuk diunduh!");
-                return;
-            }
-
-            let csvContent = "data:text/csv;charset=utf-8,";
-            csvContent += "Tanggal,Jam,Tipe,Kategori,Jumlah\n";
-
+            if (transactions.length === 0) { alert("Data kosong"); return; }
+            let csv = "data:text/csv;charset=utf-8,Tanggal,Jam,Tipe,Kategori,Jumlah\n";
             transactions.forEach(t => {
-                const dateObj = new Date(t.date);
-                const date = dateObj.toLocaleDateString('id-ID');
-                const time = dateObj.toLocaleTimeString('id-ID');
-                const amount = t.type === 'expense' ? -t.amount : t.amount;
-                
-                csvContent += `${date},${time},${t.type},${t.category},${amount}\n`;
+                const d = new Date(t.date);
+                csv += `${d.toLocaleDateString()},${d.toLocaleTimeString()},${t.type},${t.category},${t.type==='expense'? -t.amount : t.amount}\n`;
             });
-
-            const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "laporan_keuangan.csv");
-            document.body.appendChild(link);
+            link.href = encodeURI(csv);
+            link.download = "keuangan.csv";
             link.click();
-            document.body.removeChild(link);
         }
     </script>
 </body>
